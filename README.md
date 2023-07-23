@@ -9,19 +9,9 @@ features with low- and high-frequency information.
 <img src="assets/home.png" width="100%" />
 
 ## Abstract
->
-Deep-net models based on self-attention, such as Swin Transformer, have achieved great success for single image superresolution (SISR). While self-attention excels at modeling
-global information, it is less effective at capturing high frequencies (e.g., edges etc.) that deliver local information primarily, which is crucial for SISR. To tackle this, we propose
-a global-local awareness network (GLA-Net) to effectively
-capture global and local information to learn comprehensive
-features with low- and high-frequency information. First, we
-design a GLA layer that combines a high-frequency-oriented
-Inception module with a low-frequency-oriented Swin Transformer module to simultaneously process local and global
-information. Second, we introduce dense connections inbetween GLA blocks to strengthen feature propagation and
-alleviate the vanishing-gradient problem, where each GLA
-block is composed of several GLA layers. By coupling these
+> Deep-net models based on self-attention, such as Swin Trans former, have achieved great success for single image super resolution (SISR). While self-attention excels at modeling global information, it is less effective at capturing high frequencies (e.g., edges etc.) that deliver local information primarily, which is crucial for SISR. To tackle this, we propose a global-local awareness network (GLA-Net) to effectively capture global and local information to learn comprehensive features with low- and high-frequency information. First, we
+Design a GLA layer that combines a high-frequency-oriented Inception module with a low-frequency-oriented Swin Trans former module to simultaneously process local and global information. Second, we introduce dense connections in between GLA blocks to strengthen feature propagation and alleviate the vanishing-gradient problem, where each GLA block is composed of several GLA layers. By coupling these
 core designs, GLA-Net achieves SOTA performance on SISR.
->
 <img src="assets/architecture.png" width="100%" />
 
 ## Getting Started 
