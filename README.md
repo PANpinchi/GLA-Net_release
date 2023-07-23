@@ -117,7 +117,7 @@ python main_test_glanet.py --task classical_sr --scale 4 --training_patch_size 4
 ```
 
 ## Results
-We use the DIV2K dataset as training set and adopt benchmark datasets including Set5, Set14, BSD100, Urban100, and Manga109 for evaluation. We compare the proposed GLA-Net with several leading methods including, RCAN, SAN, IGNN, HAN, NLSA, and SwinIR. PSNR and SSIM are adopted as standard evaluation metrics.
+> We use the DIV2K dataset as training set and adopt benchmark datasets including Set5, Set14, BSD100, Urban100, and Manga109 for evaluation. We compare the proposed GLA-Net with several leading methods including, RCAN, SAN, IGNN, HAN, NLSA, and SwinIR. PSNR and SSIM are adopted as standard evaluation metrics.
 
 <details>
     <summary>Quantitative Comparison (click me)</summary>
