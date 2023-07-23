@@ -29,7 +29,7 @@ You can download the pre-trained GLA-Net model from [here](https://drive.google.
 Used training and testing sets can be downloaded as follows:
 | Task               |                               Training Set                               |                                                                     Testing Set                                                                     |   
 |:------------------:|:------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------:|
-| <p nowrap>classical image SR</p> | <p nowrap>[DIV2K](https://data.vision.ee.ethz.ch/cvl/DIV2K/) (800 training images)</p> | <p nowrap>Set5 + Set14 + BSD100 + Urban100 + Manga109 [[Download All]](https://drive.google.com/drive/folders/1rXGfO6yvXBzYL7UuZF0XrAwhqIs_fTma?usp=drive_link)</p> |
+| <p nowrap>classical image SR</p> | <p nowrap>[DIV2K](https://data.vision.ee.ethz.ch/cvl/DIV2K/) (800 training images)</p> | Set5 + Set14 + BSD100 + Urban100 + Manga109 <br>[[Download All]](https://drive.google.com/drive/folders/1rXGfO6yvXBzYL7UuZF0XrAwhqIs_fTma?usp=drive_link) |
 
 You need to unzip the contents and put them in `/trainsets` and `/testsets`.
 
