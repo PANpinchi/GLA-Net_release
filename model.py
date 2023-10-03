@@ -1,12 +1,7 @@
-# -----------------------------------------------------------------------------------
-# SwinIR: Image Restoration Using Swin Transformer, https://arxiv.org/abs/2108.10257
-# Originally Written by Ze Liu, Modified by Jingyun Liang.
-# -----------------------------------------------------------------------------------
-
-# -----------------------------------------------------------------------------------
-# SwinIR: Image Restoration Using Swin Transformer, https://arxiv.org/abs/2108.10257
-# Originally Written by Ze Liu, Modified by Jingyun Liang.
-# -----------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+# Global-Local Awareness Network For Image Super-Resolution, https://panpinchi.github.io/GLA-Net
+# Written by Pin-Chi Pan
+# -----------------------------------------------------------------------------------------------
 
 import math
 import torch
@@ -165,8 +160,8 @@ class WindowAttention(nn.Module):
         return flops
 
 
-class SwinTransformerBlock(nn.Module):
-    r""" Swin Transformer Block.
+class GLALayer(nn.Module):
+    r""" Global-Local Awareness Layer (GLA Layer)
     Args:
         dim (int): Number of input channels.
         input_resolution (tuple[int]): Input resulotion.
@@ -218,32 +213,27 @@ class SwinTransformerBlock(nn.Module):
 
         self.register_buffer("attn_mask", attn_mask)
 
-        # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+        # Inception
         self.Conv_h1 = nn.Sequential(
             nn.MaxPool2d((3, 3), stride=1, padding=1),
             nn.Conv2d(dim, dim // 4, (1, 1), stride=1, padding=0)
         )
-
         self.Conv_h2 = nn.Sequential(
             nn.Conv2d(dim, dim // 4, (1, 1), stride=1, padding=0),
             nn.Conv2d(dim // 4, dim // 4, (1, 3), stride=1, padding=(0, 1)),
             nn.Conv2d(dim // 4, dim // 4, (3, 1), stride=1, padding=(1, 0))
         )
-
         self.Conv_h3 = nn.Sequential(
             nn.Conv2d(dim, dim // 4, (1, 1), stride=1, padding=0),
             nn.Conv2d(dim // 4, dim // 4, (1, 5), stride=1, padding=(0, 2)),
             nn.Conv2d(dim // 4, dim // 4, (5, 1), stride=1, padding=(2, 0)),
         )
-
         self.Conv_h4 = nn.Sequential(
             nn.Conv2d(dim, dim // 4, (1, 1), stride=1, padding=0),
             nn.Conv2d(dim // 4, dim // 4, (1, 7), stride=1, padding=(0, 3)),
             nn.Conv2d(dim // 4, dim // 4, (7, 1), stride=1, padding=(3, 0)),
         )
-
         self.Conv_h_l = nn.Conv2d(dim * 2, dim, (1, 1), stride=1, padding=0)
-        # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
     def calculate_mask(self, x_size):
         # calculate attention mask for SW-MSA
@@ -277,17 +267,11 @@ class SwinTransformerBlock(nn.Module):
         x = self.norm1(x)
         x = x.view(B, H, W, C)  # (B, H, W, C)
 
-        # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
         x_h = x.permute(0, 3, 1, 2).contiguous()  # (B, C, H, W)
-
         y_h1 = self.Conv_h1(x_h)  # (B, C_h1, H, W)
-
         y_h2 = self.Conv_h2(x_h)  # (B, C_h2, H, W)
-
         y_h3 = self.Conv_h3(x_h)  # (B, C_h3, H, W)
-
         y_h4 = self.Conv_h4(x_h)  # (B, C_h4, H, W)
-        # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
         # cyclic shift
         if self.shift_size > 0:
@@ -315,12 +299,10 @@ class SwinTransformerBlock(nn.Module):
         else:
             x = shifted_x
 
-        # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
         x = x.view(B, H, W, C).permute(0, 3, 1, 2).contiguous()  # (B, C, H, W)
         x = torch.cat((x, y_h1, y_h2, y_h3, y_h4), dim=1)  # (B, C, H, W)
         x = self.Conv_h_l(x)
         x = x.permute(0, 2, 3, 1).contiguous()  # (B, H, W, C)
-        # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
         x = x.view(B, H * W, C)
 
@@ -398,7 +380,7 @@ class PatchMerging(nn.Module):
 
 
 class BasicLayer(nn.Module):
-    """ A basic Swin Transformer layer for one stage.
+    """ A basic Global-Local Awareness layer for one stage.
     Args:
         dim (int): Number of input channels.
         input_resolution (tuple[int]): Input resolution.
@@ -428,15 +410,15 @@ class BasicLayer(nn.Module):
 
         # build blocks
         self.blocks = nn.ModuleList([
-            SwinTransformerBlock(dim=dim, input_resolution=input_resolution,
-                                 num_heads=num_heads, window_size=window_size,
-                                 shift_size=0 if (i % 2 == 0) else window_size // 2,
-                                 mlp_ratio=mlp_ratio,
-                                 qkv_bias=qkv_bias, qk_scale=qk_scale,
-                                 drop=drop, attn_drop=attn_drop,
-                                 drop_path=drop_path[i] if isinstance(drop_path, list) else drop_path,
-                                 norm_layer=norm_layer,
-                                 layer_idx=layer_idx)
+            GLALayer(dim=dim, input_resolution=input_resolution,
+                     num_heads=num_heads, window_size=window_size,
+                     shift_size=0 if (i % 2 == 0) else window_size // 2,
+                     mlp_ratio=mlp_ratio,
+                     qkv_bias=qkv_bias, qk_scale=qk_scale,
+                     drop=drop, attn_drop=attn_drop,
+                     drop_path=drop_path[i] if isinstance(drop_path, list) else drop_path,
+                     norm_layer=norm_layer,
+                     layer_idx=layer_idx)
             for i in range(depth)])
 
         # patch merging layer
@@ -467,8 +449,8 @@ class BasicLayer(nn.Module):
         return flops
 
 
-class RSTB(nn.Module):
-    """Residual Swin Transformer Block (RSTB).
+class GLABlock(nn.Module):
+    """Global-Local Awareness Block (GLA Block).
     Args:
         dim (int): Number of input channels.
         input_resolution (tuple[int]): Input resolution.
@@ -493,7 +475,7 @@ class RSTB(nn.Module):
                  mlp_ratio=4., qkv_bias=True, qk_scale=None, drop=0., attn_drop=0.,
                  drop_path=0., norm_layer=nn.LayerNorm, downsample=None, use_checkpoint=False,
                  img_size=224, patch_size=4, resi_connection='1conv', layer_idx=0):
-        super(RSTB, self).__init__()
+        super(GLABlock, self).__init__()
 
         self.dim = dim
         self.input_resolution = input_resolution
@@ -661,15 +643,15 @@ class UpsampleOneStep(nn.Sequential):
         return flops
 
 
-class SwinIR(nn.Module):
-    r""" SwinIR
-        A PyTorch impl of : `SwinIR: Image Restoration Using Swin Transformer`, based on Swin Transformer.
+class GLANet(nn.Module):
+    r""" GLANet
+        A PyTorch implementation of Global-Local Awareness Network For Image Super-Resolution.
     Args:
         img_size (int | tuple(int)): Input image size. Default 64
         patch_size (int | tuple(int)): Patch size. Default: 1
         in_chans (int): Number of input image channels. Default: 3
         embed_dim (int): Patch embedding dimension. Default: 96
-        depths (tuple(int)): Depth of each Swin Transformer layer.
+        depths (tuple(int)): Depth of each Global-Local Awareness layer (GLA Layer).
         num_heads (tuple(int)): Number of attention heads in different layers.
         window_size (int): Window size. Default: 7
         mlp_ratio (float): Ratio of mlp hidden dim to embedding dim. Default: 4
@@ -695,7 +677,7 @@ class SwinIR(nn.Module):
                  norm_layer=nn.LayerNorm, ape=False, patch_norm=True,
                  use_checkpoint=False, upscale=2, img_range=1., upsampler='', resi_connection='1conv',
                  **kwargs):
-        super(SwinIR, self).__init__()
+        super(GLANet, self).__init__()
         num_in_ch = in_chans
         num_out_ch = in_chans
         num_feat = 64
@@ -745,30 +727,30 @@ class SwinIR(nn.Module):
         # stochastic depth
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]  # stochastic depth decay rule
 
-        # build Residual Swin Transformer blocks (RSTB)
+        # build Global-Local Awareness Blocks (GLA Block)
         self.layers = nn.ModuleList()
         self.conv_layers = nn.ModuleList()
 
         for i_layer in range(self.num_layers):
             conv_layers = nn.Conv2d(embed_dim * (i_layer + 1), embed_dim, (1, 1), 1, 0)
-            layer = RSTB(dim=embed_dim,
-                         input_resolution=(patches_resolution[0],
-                                           patches_resolution[1]),
-                         depth=depths[i_layer],
-                         num_heads=num_heads[i_layer],
-                         window_size=window_size,
-                         mlp_ratio=self.mlp_ratio,
-                         qkv_bias=qkv_bias, qk_scale=qk_scale,
-                         drop=drop_rate, attn_drop=attn_drop_rate,
-                         drop_path=dpr[sum(depths[:i_layer]):sum(depths[:i_layer + 1])],  # no impact on SR results
-                         norm_layer=norm_layer,
-                         downsample=None,
-                         use_checkpoint=use_checkpoint,
-                         img_size=img_size,
-                         patch_size=patch_size,
-                         resi_connection=resi_connection,
-                         layer_idx=i_layer
-                         )
+            layer = GLABlock(dim=embed_dim,
+                             input_resolution=(patches_resolution[0],
+                                               patches_resolution[1]),
+                             depth=depths[i_layer],
+                             num_heads=num_heads[i_layer],
+                             window_size=window_size,
+                             mlp_ratio=self.mlp_ratio,
+                             qkv_bias=qkv_bias, qk_scale=qk_scale,
+                             drop=drop_rate, attn_drop=attn_drop_rate,
+                             drop_path=dpr[sum(depths[:i_layer]):sum(depths[:i_layer + 1])],  # no impact on SR results
+                             norm_layer=norm_layer,
+                             downsample=None,
+                             use_checkpoint=use_checkpoint,
+                             img_size=img_size,
+                             patch_size=patch_size,
+                             resi_connection=resi_connection,
+                             layer_idx=i_layer
+                             )
             self.layers.append(layer)
             self.conv_layers.append(conv_layers)
         self.norm = norm_layer(self.num_features)
@@ -841,7 +823,7 @@ class SwinIR(nn.Module):
             x = x.permute(0, 2, 3, 1).contiguous()  # (B, H, W, C)
             x = x.view(B, H * W, C)
 
-            x = layer(x, x_size)  # RSTB
+            x = layer(x, x_size)  # GLA Block
 
             x_short = torch.cat((x, pre_feature), dim=2)  # (B, L, current_dim + embed_dim)
 
@@ -869,7 +851,7 @@ class SwinIR(nn.Module):
 
         x = x / self.img_range + self.mean
 
-        return x[:, :, :H*self.upscale, :W*self.upscale]
+        return x[:, :, :H * self.upscale, :W * self.upscale]
 
     def flops(self):
         flops = 0
@@ -886,8 +868,8 @@ class SwinIR(nn.Module):
 if __name__ == '__main__':
     model_opt = {"upscale": 2,
                  "in_chans": 3,
-                 "img_size": 96,
-                 "window_size": 4,
+                 "img_size": 48,
+                 "window_size": 8,
                  "img_range": 1.0,
                  "depths": [6, 6, 6, 6, 6, 6],
                  "embed_dim": 180,
@@ -896,7 +878,7 @@ if __name__ == '__main__':
                  "upsampler": "pixelshuffle",
                  "resi_connection": "1conv"}
 
-    model = SwinIR(upscale=model_opt['upscale'],
+    model = GLANet(upscale=model_opt['upscale'],
                    in_chans=model_opt['in_chans'],
                    img_size=model_opt['img_size'],
                    window_size=model_opt['window_size'],
@@ -911,4 +893,4 @@ if __name__ == '__main__':
     x = torch.randn((1, 3, 48, 48))
 
     x = model(x)
-    print(f'Output: {x.shape}')
+    print('Output: {}'.format(x.shape))
